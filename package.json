@@ -20,6 +20,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.7.7",
+    "bull": "^4.16.3",
     "cloudinary": "^2.4.0",
     "csv-parser": "^3.0.0",
     "dotenv": "^16.4.5",

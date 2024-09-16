@@ -2,6 +2,28 @@ import Product from '../models/productModel.js';
 import { parseCSV } from '../services/imageService.js';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
+import imageProcessingQueue from '../workers/imageProcessingWorker.js';
+export const getProductStatusBySerialNumber = async (req, res) => {
+  const { serialNumber } = req.params;
+
+  try {
+    // Find the product by serialNumber
+    const product = await Product.findOne({ serialNumber });
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Check if product is defined before accessing its properties
+    const { status, outputImageUrls } = product;
+
+    // Return the product's status and output image URLs
+    res.status(200).json({ status, outputImageUrls });
+  } catch (error) {
+    console.error('Error fetching product status:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 export const uploadCSV = async (req, res, next) => {
   try {
@@ -44,5 +66,26 @@ export const getStatus = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const processImages = async (req, res) => {
+  const { serialNumber } = req.params;
+
+  try {
+    const product = await Product.findOne({ serialNumber });
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    await imageProcessingQueue.add({
+      product,
+    });
+
+    res.status(200).json({ message: 'Image processing started', product });
+  } catch (error) {
+    console.error('Error processing images:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
